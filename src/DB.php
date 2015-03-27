@@ -1,6 +1,6 @@
 <?php
 
-namespace ptf;
+namespace xiaochi;
 
 use Pdo;
 use PdoException;
@@ -75,7 +75,7 @@ class DB
         };
         $set_str = $join($set);
         $where_str = $join($where);
-        $sql = "update $table set $set_str where $where_str";
+        $sql = "UPDATE $table SET $set_str WHERE $where_str";
         return $this->execute($sql, array_merge(array_values($set), array_values($where)));
     }
 
@@ -88,7 +88,7 @@ class DB
         $value_str = implode(',', array_map(function($field){
             return ":$field";
         }, $keys));
-        $sql = "insert into $table ($columns)values($value_str)";
+        $sql = "INSERT INTO `$table` ($columns) VALUES ($value_str)";
         $this->execute($sql, $values);
         return $this->lastInsertId();
     }
