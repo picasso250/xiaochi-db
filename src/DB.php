@@ -18,14 +18,14 @@ class DB
 
     private function reconnect()
     {
-        $options = [Pdo::MYSQL_ATTR_INIT_COMMAND => 'set names utf8'];
+        $options = array(Pdo::MYSQL_ATTR_INIT_COMMAND => 'set names utf8');
         $pdo = new Pdo($this->dsn, $this->username, $this->password, $options);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo = $pdo;
     }
     public function __construct($dsn, $username, $password)
     {
-        list($this->dsn, $this->username, $this->password) = [$dsn, $username, $password];
+        list($this->dsn, $this->username, $this->password) = array($dsn, $username, $password);
         $this->reconnect();
     }
 
@@ -147,7 +147,7 @@ class DB
     public function queryColumn($sql, $values=array())
     {
         $stmt = $this->execute($sql, $values);
-        $ret = [];
+        $ret = array();
         while (($s = $stmt->fetchColumn()) !== false) {
             $ret[] = $s;
         }
