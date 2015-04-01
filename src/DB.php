@@ -32,9 +32,10 @@ class DB
     public function execute($sql, $values = array())
     {
         if (is_int(key($values))) {
-            $param_arr = array_map(function($e) {
-                return $this->quote($e);
-            }, $values);
+            $param_arr = array();
+            foreach ($values as $e) {
+                $param_arr[] = $this->quote($e);
+            }
             array_unshift($param_arr, str_replace('?', '%s', $sql));
             $this->lastSql = call_user_func_array('sprintf', $param_arr);
         } else {
