@@ -35,7 +35,8 @@ class DB
             $param_arr = array_map(function($e) {
                 return $this->quote($e);
             }, $values);
-            array_unshift($param_arr, str_replace('?', '%s', $sql));
+            $sql_ = str_replace('%', '%%', $sql);
+            array_unshift($param_arr, str_replace('?', '%s', $sql_));
             $this->lastSql = call_user_func_array('sprintf', $param_arr);
         } else {
             $print_sql = $sql;
@@ -59,6 +60,7 @@ class DB
                 $stmt->execute($values);
             } else {
                 print_r($errorInfo);
+                echo "$this->lastSql\n";
                 throw $e;
             }
         }
