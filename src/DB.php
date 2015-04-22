@@ -1,6 +1,6 @@
 <?php
 
-namespace xiaochi;
+namespace Xiaochi;
 
 use Pdo;
 use PdoException;

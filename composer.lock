@@ -1,0 +1,57 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
+    ],
+    "hash": "3242e0e9a1140835ada9350a2a4f2331",
+    "packages": [],
+    "packages-dev": [
+        {
+            "name": "bafs/testify",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/BafS/Testify.php.git",
+                "reference": "63e4d023a1a2527d8a80b911030558b5d71b0116"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/BafS/Testify.php/zipball/63e4d023a1a2527d8a80b911030558b5d71b0116",
+                "reference": "63e4d023a1a2527d8a80b911030558b5d71b0116",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Testify\\": "lib/Testify/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL"
+            ],
+            "description": "Testify makes writing unit tests fun again. It has an elegant syntax and keeps things simple",
+            "keywords": [
+                "framework",
+                "testing",
+                "unit"
+            ],
+            "time": "2014-07-15 21:22:12"
+        }
+    ],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {
+        "bafs/testify": 20
+    },
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": ">=5.3.0"
+    },
+    "platform-dev": []
+}
