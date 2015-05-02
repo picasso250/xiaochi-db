@@ -160,8 +160,12 @@ class DB
         return $stmt->fetchColumn();
     }
 
-    public static function timestamp()
+    public static function timestamp($time = null)
     {
-        return date('Y-m-d H:i:s');
+        $format = 'Y-m-d H:i:s';
+        if ($time === null) {
+            return date($format);
+        }
+        return date($format, $time);
     }
 }
