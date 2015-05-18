@@ -1,6 +1,6 @@
 <?php
 
-namespace xiaochi;
+namespace Xiaochi;
 
 use Pdo;
 use PdoException;
@@ -18,25 +18,25 @@ class DB
 
     private function reconnect()
     {
-        $options = [Pdo::MYSQL_ATTR_INIT_COMMAND => 'set names utf8'];
+        $options = array(Pdo::MYSQL_ATTR_INIT_COMMAND => 'set names utf8');
         $pdo = new Pdo($this->dsn, $this->username, $this->password, $options);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo = $pdo;
     }
     public function __construct($dsn, $username, $password)
     {
-        list($this->dsn, $this->username, $this->password) = [$dsn, $username, $password];
+        list($this->dsn, $this->username, $this->password) = array($dsn, $username, $password);
         $this->reconnect();
     }
 
     public function execute($sql, $values = array())
     {
         if (is_int(key($values))) {
-            $param_arr = array_map(function($e) {
-                return $this->quote($e);
-            }, $values);
-            $sql_ = str_replace('%', '%%', $sql);
-            array_unshift($param_arr, str_replace('?', '%s', $sql_));
+            $param_arr = array();
+            foreach ($values as $e) {
+                $param_arr[] = $this->quote($e);
+            }
+            array_unshift($param_arr, str_replace('?', '%s', $sql));
             $this->lastSql = call_user_func_array('sprintf', $param_arr);
         } else {
             $print_sql = $sql;
@@ -149,7 +149,7 @@ class DB
     public function queryColumn($sql, $values=array())
     {
         $stmt = $this->execute($sql, $values);
-        $ret = [];
+        $ret = array();
         while (($s = $stmt->fetchColumn()) !== false) {
             $ret[] = $s;
         }
@@ -161,8 +161,12 @@ class DB
         return $stmt->fetchColumn();
     }
 
-    public static function timestamp()
+    public static function timestamp($time = null)
     {
-        return date('Y-m-d H:i:s');
+        $format = 'Y-m-d H:i:s';
+        if ($time === null) {
+            return date($format);
+        }
+        return date($format, $time);
     }
 }
