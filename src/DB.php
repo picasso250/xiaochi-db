@@ -75,10 +75,19 @@ class DB
         $join = function ($kvs) use ($func) {
             return implode(',', array_map($func, array_keys($kvs)));
         };
-        $set_str = $join($set);
+        $set_values = [];
+        foreach ($set as $key => $value) {
+            if (is_int($key)) {
+                $set_arr[] = $value;
+            } else {
+                $set_values[] = $value;
+                $set_arr[] = $func($key);
+            }
+        }
+        $set_str = implode(', ', $set_arr);
         $where_str = $join($where);
         $sql = "UPDATE $table SET $set_str WHERE $where_str";
-        return $this->execute($sql, array_merge(array_values($set), array_values($where)));
+        return $this->execute($sql, array_merge($set_values, array_values($where)));
     }
 
     public function insert($table, $values)
