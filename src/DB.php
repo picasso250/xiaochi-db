@@ -118,6 +118,11 @@ class DB
             $sql = "SELECT * from `$table` where $where limit 1000";
             return $this->queryAll($sql, $args);
         }
+        if (preg_match('/^all_(\w+)$/', $name, $matches)) {
+            $table = $matches[1];
+            $sql = "SELECT * from `$table` limit 1000";
+            return $this->queryAll($sql);
+        }
         if (preg_match('/^count_(\w+)_by_(\w+)$/', $name, $matches)) {
             $table = $matches[1];
             $keys = $matches[2];
