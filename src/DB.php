@@ -113,25 +113,33 @@ class DB
         }
         if (preg_match('/^all_(\w+)_by_(\w+)$/', $name, $matches)) {
             $table = $matches[1];
-            $key = $matches[2];
-            return $this->queryAll("SELECT * from `$table` where `$key` = ? limit 1000", $args);
-        }
-        if (preg_match('/^get_all_(\w+)$/', $name, $matches)) {
-            $table = $matches[1];
-            return $this->queryAll("SELECT * from `$table` limit ".intval($args[0]));
+            $keys = $matches[2];
+            $where = self::buildWhereAnd($keys);
+            $sql = "SELECT * from `$table` where $where limit 1000";
+            return $this->queryAll($sql, $args);
         }
         if (preg_match('/^count_(\w+)_by_(\w+)$/', $name, $matches)) {
             $table = $matches[1];
-            $key = $matches[2];
-            $sql = "SELECT COUNT(*) from `$table` where `$key` = ?";
+            $keys = $matches[2];
+            $where = self::buildWhereAnd($keys);
+            $sql = "SELECT COUNT(*) from `$table` where $where";
             return intval($this->queryScalar($sql, $args));
         }
         if (preg_match('/^get_(\w+)_by_(\w+)$/', $name, $matches)) {
             $table = $matches[1];
-            $key = $matches[2];
-            return $this->queryRow("SELECT * from `$table` where `$key` = ? limit 1", $args);
+            $keys = $matches[2];
+            $where = self::buildWhereAnd($keys);
+            $sql = "SELECT * FROM `$table` WHERE $where limit 1";
+            return $this->queryRow($sql, $args);
         }
         throw new \BadMethodCallException("no $name", 1);
+    }
+    public static function buildWhereAnd($keys)
+    {
+        $keys = explode('_and_', $keys);
+        return $where = implode(' AND ', array_map(function($key){
+            return "`$key`=?";
+        }, $keys));
     }
 
     public function queryAll($sql, $values=array(), $mode=Pdo::FETCH_ASSOC)
