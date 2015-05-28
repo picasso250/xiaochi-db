@@ -130,6 +130,11 @@ class DB
             $sql = "SELECT COUNT(*) from `$table` where $where";
             return intval($this->queryScalar($sql, $args));
         }
+        if (preg_match('/^count_(\w+)$/', $name, $matches)) {
+            $table = $matches[1];
+            $sql = "SELECT COUNT(*) from `$table`";
+            return intval($this->queryScalar($sql, $args));
+        }
         if (preg_match('/^get_(\w+)_by_(\w+)$/', $name, $matches)) {
             $table = $matches[1];
             $keys = $matches[2];
@@ -150,7 +155,7 @@ class DB
     public function queryAll($sql, $values=array(), $mode=Pdo::FETCH_ASSOC)
     {
         $stmt = $this->execute($sql, $values);
-        return $stmt->fetchAll($mode);
+        return $stmt->fetchAll($mode) ?: array();
     }
 
     public function queryRow($sql, $values=array(), $mode=Pdo::FETCH_ASSOC)
