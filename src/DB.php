@@ -75,10 +75,19 @@ class DB
         $join = function ($kvs) use ($func) {
             return implode(',', array_map($func, array_keys($kvs)));
         };
-        $set_str = $join($set);
+        $set_values = [];
+        foreach ($set as $key => $value) {
+            if (is_int($key)) {
+                $set_arr[] = $value;
+            } else {
+                $set_values[] = $value;
+                $set_arr[] = $func($key);
+            }
+        }
+        $set_str = implode(', ', $set_arr);
         $where_str = $join($where);
         $sql = "UPDATE $table SET $set_str WHERE $where_str";
-        return $this->execute($sql, array_merge(array_values($set), array_values($where)));
+        return $this->execute($sql, array_merge($set_values, array_values($where)));
     }
 
     public function insert($table, $values)
@@ -113,31 +122,49 @@ class DB
         }
         if (preg_match('/^all_(\w+)_by_(\w+)$/', $name, $matches)) {
             $table = $matches[1];
-            $key = $matches[2];
-            return $this->queryAll("SELECT * from `$table` where `$key` = ? limit 1000", $args);
+            $keys = $matches[2];
+            $where = self::buildWhereAnd($keys);
+            $sql = "SELECT * from `$table` where $where limit 1000";
+            return $this->queryAll($sql, $args);
         }
-        if (preg_match('/^get_all_(\w+)$/', $name, $matches)) {
+        if (preg_match('/^all_(\w+)$/', $name, $matches)) {
             $table = $matches[1];
-            return $this->queryAll("SELECT * from `$table` limit ".intval($args[0]));
+            $sql = "SELECT * from `$table` limit 1000";
+            return $this->queryAll($sql);
         }
         if (preg_match('/^count_(\w+)_by_(\w+)$/', $name, $matches)) {
             $table = $matches[1];
-            $key = $matches[2];
-            $sql = "SELECT COUNT(*) from `$table` where `$key` = ?";
+            $keys = $matches[2];
+            $where = self::buildWhereAnd($keys);
+            $sql = "SELECT COUNT(*) from `$table` where $where";
+            return intval($this->queryScalar($sql, $args));
+        }
+        if (preg_match('/^count_(\w+)$/', $name, $matches)) {
+            $table = $matches[1];
+            $sql = "SELECT COUNT(*) from `$table`";
             return intval($this->queryScalar($sql, $args));
         }
         if (preg_match('/^get_(\w+)_by_(\w+)$/', $name, $matches)) {
             $table = $matches[1];
-            $key = $matches[2];
-            return $this->queryRow("SELECT * from `$table` where `$key` = ? limit 1", $args);
+            $keys = $matches[2];
+            $where = self::buildWhereAnd($keys);
+            $sql = "SELECT * FROM `$table` WHERE $where limit 1";
+            return $this->queryRow($sql, $args);
         }
         throw new \BadMethodCallException("no $name", 1);
+    }
+    public static function buildWhereAnd($keys)
+    {
+        $keys = explode('_and_', $keys);
+        return $where = implode(' AND ', array_map(function($key){
+            return "`$key`=?";
+        }, $keys));
     }
 
     public function queryAll($sql, $values=array(), $mode=Pdo::FETCH_ASSOC)
     {
         $stmt = $this->execute($sql, $values);
-        return $stmt->fetchAll($mode);
+        return $stmt->fetchAll($mode) ?: array();
     }
 
     public function queryRow($sql, $values=array(), $mode=Pdo::FETCH_ASSOC)
