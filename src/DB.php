@@ -169,4 +169,8 @@ class DB
         }
         return date($format, $time);
     }
+    public function createCommand()
+    {
+        return new SqlBuilder($this);
+    }
 }
