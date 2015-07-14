@@ -67,6 +67,19 @@ class DB
         return $stmt;
     }
 
+    public function delete($table, $where)
+    {
+        $func = function ($field) {
+            return "`$field`=?";
+        };
+        $join = function ($kvs) use ($func) {
+            return implode(',', array_map($func, array_keys($kvs)));
+        };
+        $where_str = $join($where);
+        $sql = "DELETE FROM $table WHERE $where_str";
+        return $this->execute($sql, array_values($where));
+    }
+    
     public function update($table, $set, $where)
     {
         $func = function ($field) {
