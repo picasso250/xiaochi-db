@@ -103,6 +103,32 @@ class DB
         return $this->execute($sql, array_merge($set_values, array_values($where)));
     }
 
+    public function upsert($table, $values)
+    {
+        $keys = array_keys($values);
+        $columns = implode(',', array_map(function ($field) {
+            return "`$field`";
+        }, $keys));
+        $value_str = implode(',', array_map(function($field){
+            return ":$field";
+        }, $keys));
+        $func = function ($field) {
+            return "`$field`=:$field";
+        };
+        $set_values = [];
+        foreach ($values as $key => $value) {
+            if (is_int($key)) {
+                $set_arr[] = $value;
+            } else {
+                $set_values[] = $value;
+                $set_arr[] = $func($key);
+            }
+        }
+        $set_str = implode(', ', $set_arr);
+        $sql = "INSERT INTO `$table` ($columns) VALUES ($value_str) ON DUPLICATE KEY UPDATE $set_str";
+        $this->execute($sql, $values);
+        return $this->lastInsertId();
+    }
     public function insert($table, $values)
     {
         $keys = array_keys($values);
@@ -208,5 +234,9 @@ class DB
             return date($format);
         }
         return date($format, $time);
+    }
+    public function createCommand()
+    {
+        return new SqlBuilder($this);
     }
 }
