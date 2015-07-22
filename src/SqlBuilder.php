@@ -4,11 +4,12 @@ namespace Xiaochi;
 
 class SqlBuilder
 {
-    public function __construct($db)
+    public function __construct($db, $sql = null)
     {
         $this->db = $db;
         $this->values = array();
         $this->select = '*';
+        $this->sql = $sql;
     }
     public function __call($method, $args)
     {
@@ -23,7 +24,10 @@ class SqlBuilder
             // echo "assgin $method $args[0]\n";
             $this->{$method} = $args[0];
             // print_r($this);
-        } elseif (strpos($method, 'query') === 0) {
+        } elseif (strpos($method, 'query') === 0 || $method === 'execute') {
+            if ($this->sql) {
+                return $this->db->$method($this->sql, $this->values);
+            }
             $sql = "SELECT $this->select from $this->from ";
             if (isset($this->where)) {
                 $sql .= " WHERE $this->where ";
@@ -41,7 +45,7 @@ class SqlBuilder
         }
         return $this;
     }
-    public function where($str, $values) {
+    public function where($str, $values = array()) {
         $this->where = $str;
         $this->values = $values;
         return $this;

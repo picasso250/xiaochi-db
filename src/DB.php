@@ -196,8 +196,8 @@ class DB
         }
         return date($format, $time);
     }
-    public function createCommand()
+    public function createCommand($sql = null)
     {
-        return new SqlBuilder($this);
+        return new SqlBuilder($this, $sql);
     }
 }
