@@ -67,6 +67,19 @@ class DB
         return $stmt;
     }
 
+    public function delete($table, $where)
+    {
+        $func = function ($field) {
+            return "`$field`=?";
+        };
+        $join = function ($kvs) use ($func) {
+            return implode(',', array_map($func, array_keys($kvs)));
+        };
+        $where_str = $join($where);
+        $sql = "DELETE FROM $table WHERE $where_str";
+        return $this->execute($sql, array_values($where));
+    }
+    
     public function update($table, $set, $where)
     {
         $func = function ($field) {
@@ -90,6 +103,32 @@ class DB
         return $this->execute($sql, array_merge($set_values, array_values($where)));
     }
 
+    public function upsert($table, $values)
+    {
+        $keys = array_keys($values);
+        $columns = implode(',', array_map(function ($field) {
+            return "`$field`";
+        }, $keys));
+        $value_str = implode(',', array_map(function($field){
+            return ":$field";
+        }, $keys));
+        $func = function ($field) {
+            return "`$field`=:$field";
+        };
+        $set_values = [];
+        foreach ($values as $key => $value) {
+            if (is_int($key)) {
+                $set_arr[] = $value;
+            } else {
+                $set_values[] = $value;
+                $set_arr[] = $func($key);
+            }
+        }
+        $set_str = implode(', ', $set_arr);
+        $sql = "INSERT INTO `$table` ($columns) VALUES ($value_str) ON DUPLICATE KEY UPDATE $set_str";
+        $this->execute($sql, $values);
+        return $this->lastInsertId();
+    }
     public function insert($table, $values)
     {
         $keys = array_keys($values);
