@@ -31,6 +31,9 @@ class DB
 
     public function execute($sql, $values = array())
     {
+        if (!is_array($values)) {
+            throw new Exception("no array", 1);
+        }
         if (is_int(key($values))) {
             $param_arr = array();
             foreach ($values as $e) {
@@ -41,7 +44,11 @@ class DB
         } else {
             $print_sql = $sql;
             foreach ($values as $k => $v) {
-                $print_sql = str_replace(':'.$k, $this->quote($v), $print_sql);
+                if (!is_scalar($v)) {
+                    var_dump($v);
+                    throw new \Exception("not scalar", 1);
+                }
+                $print_sql = str_replace(':'.$k, $this->pdo->quote($v), $print_sql);
             }
             $this->lastSql = $print_sql;
         }
@@ -85,10 +92,10 @@ class DB
         $func = function ($field) {
             return "`$field`=?";
         };
-        $join = function ($kvs) use ($func) {
-            return implode(',', array_map($func, array_keys($kvs)));
+        $join = function ($kvs, $op = ',') use ($func) {
+            return implode($op, array_map($func, array_keys($kvs)));
         };
-        $set_values = [];
+        $set_values = array();
         foreach ($set as $key => $value) {
             if (is_int($key)) {
                 $set_arr[] = $value;
@@ -98,7 +105,7 @@ class DB
             }
         }
         $set_str = implode(', ', $set_arr);
-        $where_str = $join($where);
+        $where_str = $join($where, ' AND ');
         $sql = "UPDATE $table SET $set_str WHERE $where_str";
         return $this->execute($sql, array_merge($set_values, array_values($where)));
     }
@@ -115,7 +122,7 @@ class DB
         $func = function ($field) {
             return "`$field`=:$field";
         };
-        $set_values = [];
+        $set_values = array();
         foreach ($values as $key => $value) {
             if (is_int($key)) {
                 $set_arr[] = $value;
@@ -126,8 +133,7 @@ class DB
         }
         $set_str = implode(', ', $set_arr);
         $sql = "INSERT INTO `$table` ($columns) VALUES ($value_str) ON DUPLICATE KEY UPDATE $set_str";
-        $this->execute($sql, $values);
-        return $this->lastInsertId();
+        return $this->execute($sql, $values);
     }
     public function insert($table, $values)
     {
