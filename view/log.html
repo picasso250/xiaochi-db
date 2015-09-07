@@ -1,0 +1,20 @@
+<table>
+	<thead>
+		<tr>
+			<th>SQL</th>
+			<th>Time</th>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach ($log as $entry): ?>
+			<tr>
+				<td>
+					<code><?= htmlspecialchars($entry[0]) ?></code>
+				</td>
+				<td>
+					<span><?= $entry[1] ?> ms</span>
+				</td>
+			</tr>
+		<?php endforeach ?>
+	</tbody>
+</table>

@@ -11,6 +11,8 @@ class DB
     public $lastSql = '';
     public $pdo;
     public $debug = false;
+    public $profile = false;
+    public $log = [];
 
     private $dsn;
     private $username;
@@ -50,8 +52,10 @@ class DB
         }
 
         try {
+            $t = microtime(true);
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($values);
+            $d = intval((microtime(true) - $t) * 1000);
         } catch (PdoException $e) {
             $errorInfo = $e->errorInfo;
             if ($errorInfo[1] === 2006 && $errorInfo[0] === 'HY000') {
@@ -63,6 +67,9 @@ class DB
                 echo "$this->lastSql\n";
                 throw $e;
             }
+        }
+        if ($this->profile) {
+            $this->log[] = [$this->lastSql, $d];
         }
         return $stmt;
     }
