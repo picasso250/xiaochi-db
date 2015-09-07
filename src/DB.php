@@ -33,6 +33,9 @@ class DB
 
     public function execute($sql, $values = array())
     {
+        if (!is_array($values)) {
+            throw new Exception("no array", 1);
+        }
         if (is_int(key($values))) {
             $param_arr = array();
             foreach ($values as $e) {
@@ -43,7 +46,11 @@ class DB
         } else {
             $print_sql = $sql;
             foreach ($values as $k => $v) {
-                $print_sql = str_replace(':'.$k, $this->quote($v), $print_sql);
+                if (!is_scalar($v)) {
+                    var_dump($v);
+                    throw new \Exception("not scalar", 1);
+                }
+                $print_sql = str_replace(':'.$k, $this->pdo->quote($v), $print_sql);
             }
             $this->lastSql = $print_sql;
         }
@@ -74,7 +81,7 @@ class DB
         return $stmt;
     }
 
-    public function update($table, $set, $where)
+    public function delete($table, $where)
     {
         $func = function ($field) {
             return "`$field`=?";
@@ -82,7 +89,20 @@ class DB
         $join = function ($kvs) use ($func) {
             return implode(',', array_map($func, array_keys($kvs)));
         };
-        $set_values = [];
+        $where_str = $join($where);
+        $sql = "DELETE FROM $table WHERE $where_str";
+        return $this->execute($sql, array_values($where));
+    }
+    
+    public function update($table, $set, $where)
+    {
+        $func = function ($field) {
+            return "`$field`=?";
+        };
+        $join = function ($kvs, $op = ',') use ($func) {
+            return implode($op, array_map($func, array_keys($kvs)));
+        };
+        $set_values = array();
         foreach ($set as $key => $value) {
             if (is_int($key)) {
                 $set_arr[] = $value;
@@ -92,11 +112,36 @@ class DB
             }
         }
         $set_str = implode(', ', $set_arr);
-        $where_str = $join($where);
+        $where_str = $join($where, ' AND ');
         $sql = "UPDATE $table SET $set_str WHERE $where_str";
         return $this->execute($sql, array_merge($set_values, array_values($where)));
     }
 
+    public function upsert($table, $values)
+    {
+        $keys = array_keys($values);
+        $columns = implode(',', array_map(function ($field) {
+            return "`$field`";
+        }, $keys));
+        $value_str = implode(',', array_map(function($field){
+            return ":$field";
+        }, $keys));
+        $func = function ($field) {
+            return "`$field`=:$field";
+        };
+        $set_values = array();
+        foreach ($values as $key => $value) {
+            if (is_int($key)) {
+                $set_arr[] = $value;
+            } else {
+                $set_values[] = $value;
+                $set_arr[] = $func($key);
+            }
+        }
+        $set_str = implode(', ', $set_arr);
+        $sql = "INSERT INTO `$table` ($columns) VALUES ($value_str) ON DUPLICATE KEY UPDATE $set_str";
+        return $this->execute($sql, $values);
+    }
     public function insert($table, $values)
     {
         $keys = array_keys($values);
@@ -202,5 +247,9 @@ class DB
             return date($format);
         }
         return date($format, $time);
+    }
+    public function createCommand($sql = null)
+    {
+        return new SqlBuilder($this, $sql);
     }
 }
