@@ -34,7 +34,7 @@ class DB
     public function execute($sql, $values = array())
     {
         if (!is_array($values)) {
-            throw new Exception("no array", 1);
+            throw new \Exception("no array", 1);
         }
         if (is_int(key($values))) {
             $param_arr = array();
