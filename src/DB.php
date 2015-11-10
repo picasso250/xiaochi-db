@@ -21,13 +21,17 @@ class DB
 
     private function reconnect()
     {
-        $options = array(Pdo::MYSQL_ATTR_INIT_COMMAND => 'set names utf8');
-        $pdo = new Pdo($this->dsn, $this->username, $this->password, $options);
+        if (strpos($this->dsn, 'sqlite:') === 0) {
+            $pdo = new Pdo($this->dsn);
+        } else {
+            $options = array(Pdo::MYSQL_ATTR_INIT_COMMAND => 'set names utf8');
+            $pdo = new Pdo($this->dsn, $this->username, $this->password, $options);
+        }
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo = $pdo;
         $this->errorInfo = null;
     }
-    public function __construct($dsn, $username, $password)
+    public function __construct($dsn, $username = null, $password = null)
     {
         list($this->dsn, $this->username, $this->password) = array($dsn, $username, $password);
         $this->reconnect();
@@ -41,7 +45,7 @@ class DB
         if (is_int(key($values))) {
             $param_arr = array();
             foreach ($values as $e) {
-                $param_arr[] = $this->quote($e);
+                $param_arr[] = $this->pdo->quote($e);
             }
             array_unshift($param_arr, str_replace('?', '%s', $sql));
             $this->lastSql = call_user_func_array('sprintf', $param_arr);
@@ -55,16 +59,15 @@ class DB
             }
             $this->lastSql = $print_sql;
         }
-        if ($this->debug) {
+        if ($this->debug && !$this->profile) {
             error_log(__CLASS__.': '.$this->lastSql);
         }
 
         $this->errorInfo = null;
+        $t = microtime(true);
         try {
-            $t = microtime(true);
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($values);
-            $d = intval((microtime(true) - $t) * 1000);
         } catch (PdoException $e) {
             $errorInfo = $e->errorInfo;
             if ($errorInfo[1] === 2006 && $errorInfo[0] === 'HY000') {
@@ -72,14 +75,15 @@ class DB
                 $stmt = $this->pdo->prepare($sql);
                 $stmt->execute($values);
             } else {
-                // print_r($errorInfo);
-                // echo "$this->lastSql\n";
-                $this->errorInfo = $errorInfo;
-                $d = intval((microtime(true) - $t) * 1000);
+                throw $e;
             }
         }
+        $d = intval((microtime(true) - $t) * 1000);
         if ($this->profile) {
             $this->log[] = [$this->lastSql, $d];
+            if ($this->debug) {
+                error_log(sprintf(__CLASS__.': %s [%s ms]', $this->lastSql, $d));
+            }
         }
         return $stmt;
     }
@@ -156,6 +160,31 @@ class DB
         }, $keys));
         $sql = "INSERT INTO `$table` ($columns) VALUES ($value_str)";
         $this->execute($sql, $values);
+        return $this->lastInsertId();
+    }
+    public function insertMany($table, $values)
+    {
+        if (empty($values)) {
+            return;
+        }
+        $keys = array_keys($values[0]);
+        $columns = implode(',', array_map(function ($field) {
+            return "`$field`";
+        }, $keys));
+        $str = implode(',', array_map(function(){
+            return '?';
+        }, $keys));
+        $value_str = implode(',', array_map(function($field) use($str){
+            return "($str)";
+        }, $values));
+        $vs = [];
+        foreach ($values as $row) {
+            foreach ($row as $v) {
+                $vs[] = $v;
+            }
+        }
+        $sql = "INSERT INTO `$table` ($columns) VALUES $value_str";
+        $this->execute($sql, $vs);
         return $this->lastInsertId();
     }
 

@@ -82,7 +82,7 @@ echo $db->lastSql;
 
 If you set debug to be true, all SQLs executed will send to `error_log()`
 
-If you set profile to be true, SQL time can be accessed from logs
+If you set profile to be true, SQL time can be accessed from array `$db->log`.
 
 ```php
 $db->debug = true;
