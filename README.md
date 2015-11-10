@@ -6,7 +6,7 @@ Simple Pdo Wrapper enfast your development.
 
 * PHP >= 5.4
 
-## What it can do?
+## What can it do?
 
 - update or insert or upsert
 - select one line, many lines, a column or a scalar
@@ -80,9 +80,9 @@ You can get last excuted Sql by
 echo $db->lastSql;
 ```
 
-If you set debug to be true, all SQLs executed will send to `error_log()`
+If you set debug to be `true`, all SQLs executed will send to `error_log()`
 
-If you set profile to be true, SQL time can be accessed from array `$db->log`.
+If you set profile to be `true`, SQL time will be stored in array `$db->log`.
 
 ```php
 $db->debug = true;
