@@ -13,6 +13,7 @@ class DB
     public $debug = false;
     public $profile = false;
     public $log = [];
+    public $errorInfo;
 
     private $dsn;
     private $username;
@@ -24,6 +25,7 @@ class DB
         $pdo = new Pdo($this->dsn, $this->username, $this->password, $options);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo = $pdo;
+        $this->errorInfo = null;
     }
     public function __construct($dsn, $username, $password)
     {
@@ -47,7 +49,6 @@ class DB
             $print_sql = $sql;
             foreach ($values as $k => $v) {
                 if (!is_scalar($v)) {
-                    var_dump($v);
                     throw new \Exception("not scalar", 1);
                 }
                 $print_sql = str_replace(':'.$k, $this->pdo->quote($v), $print_sql);
@@ -58,6 +59,7 @@ class DB
             error_log(__CLASS__.': '.$this->lastSql);
         }
 
+        $this->errorInfo = null;
         try {
             $t = microtime(true);
             $stmt = $this->pdo->prepare($sql);
@@ -70,9 +72,10 @@ class DB
                 $stmt = $this->pdo->prepare($sql);
                 $stmt->execute($values);
             } else {
-                print_r($errorInfo);
-                echo "$this->lastSql\n";
-                throw $e;
+                // print_r($errorInfo);
+                // echo "$this->lastSql\n";
+                $this->errorInfo = $errorInfo;
+                $d = intval((microtime(true) - $t) * 1000);
             }
         }
         if ($this->profile) {
