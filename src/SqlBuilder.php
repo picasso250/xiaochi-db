@@ -29,6 +29,9 @@ class SqlBuilder
                 return $this->db->$method($this->sql, $this->values);
             }
             $sql = "SELECT $this->select from $this->from ";
+            if (!empty($this->join)) {
+                $sql .= " $this->join ";
+            }
             if (isset($this->where)) {
                 $sql .= " WHERE $this->where ";
             }
@@ -38,7 +41,6 @@ class SqlBuilder
                     $sql .= " $map[$verb] {$this->$verb} ";
                 }
             }
-            var_dump($sql);
             return $this->db->$method($sql, $this->values);
         } else {
             throw new \Exception("no mehtod $mehtod", 1);
@@ -48,6 +50,10 @@ class SqlBuilder
     public function where($str, $values = array()) {
         $this->where = $str;
         $this->values = $values;
+        return $this;
+    }
+    public function join($str, $on) {
+        $this->join = "JOIN $str ON $on";
         return $this;
     }
 }
