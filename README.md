@@ -13,13 +13,13 @@ Simple Pdo Wrapper enfast your development.
 
 ## Example
 
-Init
+**Init**
 
 ```php
 $db = new DB('mysql:host=localhost;dbname=test', 'username', 'password');
 ```
 
-query data
+**Query data**
 
 ```php
 $db->queryAll('SELECT * FROM topic WHERE id > ?', [3]);
@@ -27,20 +27,20 @@ $db->queryRow('SELECT * FROM topic WHERE id = ? LIMIT 1', [3]);
 $db->queryScalar('SELECT COUNT(*) FROM topic WHERE id > ?', [3]);
 ```
 
-insert
+**Insert**
 
 ```php
 $id = $db->insert('topic', ['title' => 'bar', 'body' => 'foo']);
 ```
 
-update
+**Update**
 
 ```php
 // UPDATE topic SET title='bar', body='foo' WHERE id='3'
 $db->update('topic', ['title' => 'bar', 'body' => 'foo'], ['id' => 3]);
 ```
 
-Raw query.
+**Raw query**
 
 ```php
 $db->execute('UPDATE t SET foo=foo+1 WHERE id=?', [3]);
@@ -68,11 +68,14 @@ echo $db->lastSql;
 
 If you set debug to be true, all Sqls executed will send to `error_log()`
 
+If you set profile to be true, SQL time can be accessed from logs
+
 ```php
 $db->debug = true;
+$db->profile = true;
 ```
 
-Debug is set to `false` by default.
+Debug and profile is set to `false` by default.
 
 Other methods are inherited from [PDO class](https://php.net/manual/en/class.pdo.php).
 
