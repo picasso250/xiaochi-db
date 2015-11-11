@@ -52,10 +52,10 @@ class DB
         } else {
             $print_sql = $sql;
             foreach ($values as $k => $v) {
-                if (!is_scalar($v)) {
+                if ($v !== null && !is_scalar($v)) {
                     throw new \Exception("not scalar", 1);
                 }
-                $print_sql = str_replace(':'.$k, $this->pdo->quote($v), $print_sql);
+                $print_sql = str_replace(':'.$k, $v === null ? 'NULL' : $this->pdo->quote($v), $print_sql);
             }
             $this->lastSql = $print_sql;
         }
