@@ -12,6 +12,7 @@ class DB
     public $pdo;
     public $debug = false;
     public $profile = false;
+    public $autoReconnect = false;
     public $log = [];
     public $errorInfo;
 
@@ -68,19 +69,21 @@ class DB
             error_log(__CLASS__.': '.$this->lastSql);
         }
 
-        $this->errorInfo = null;
+        if ($this->autoReconnect) {
+            $this->pdo->setAttribute(Pdo::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
+        }
         $t = microtime(true);
-        try {
+        for ($i=0; $i < 3; $i++) {
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($values);
-        } catch (PdoException $e) {
-            $errorInfo = $e->errorInfo;
-            if ($errorInfo[1] === 2006 && $errorInfo[0] === 'HY000') {
-                $this->reconnect();
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute($values);
-            } else {
-                throw $e;
+            $r = $stmt->execute($values);
+            if ($this->autoReconnect && $r === false) {
+                $errorInfo = $stmt->errorInfo();
+                if ($errorInfo[1] === 2006 && $errorInfo[0] === 'HY000') {
+                    $this->reconnect();
+                    continue;
+                } else {
+                    throw new \Exception($errorInfo[2]);
+                }
             }
         }
         $d = intval((microtime(true) - $t) * 1000);
