@@ -21,6 +21,9 @@ class DB
 
     private function reconnect()
     {
+        if ($this->debug) {
+            error_log(__CLASS__.': Connect '.$this->dsn);
+        }
         if (strpos($this->dsn, 'sqlite:') === 0) {
             $pdo = new Pdo($this->dsn);
         } else {
@@ -34,11 +37,13 @@ class DB
     public function __construct($dsn, $username = null, $password = null)
     {
         list($this->dsn, $this->username, $this->password) = array($dsn, $username, $password);
-        $this->reconnect();
     }
 
     public function execute($sql, $values = array())
     {
+        if (!$this->pdo) {
+            $this->reconnect();
+        }
         if (!is_array($values)) {
             throw new \Exception("no array", 1);
         }
