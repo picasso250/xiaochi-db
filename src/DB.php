@@ -85,6 +85,7 @@ class DB
                     throw new \Exception($errorInfo[2]);
                 }
             }
+            break;
         }
         $d = intval((microtime(true) - $t) * 1000);
         if ($this->profile) {
