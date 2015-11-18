@@ -9,13 +9,13 @@ class DB
 {
 
     public $lastSql = '';
-    public $pdo;
     public $debug = false;
     public $profile = false;
     public $autoReconnect = false;
     public $log = [];
     public $errorInfo;
 
+    private $_pdo;
     private $dsn;
     private $username;
     private $password;
@@ -32,7 +32,7 @@ class DB
             $pdo = new Pdo($this->dsn, $this->username, $this->password, $options);
         }
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->pdo = $pdo;
+        $this->_pdo = $pdo;
         $this->errorInfo = null;
     }
     public function __construct($dsn, $username = null, $password = null)
@@ -40,9 +40,20 @@ class DB
         list($this->dsn, $this->username, $this->password) = array($dsn, $username, $password);
     }
 
+    public function __get($name)
+    {
+        if ($name == 'pdo') {
+            if (!$this->_pdo) {
+                $this->reconnect();
+            }
+            return $this->_pdo;
+        }
+        throw new \Exception("no property $name", 1);
+    }
+
     public function execute($sql, $values = array())
     {
-        if (!$this->pdo) {
+        if (!$this->_pdo) {
             $this->reconnect();
         }
         if (!is_array($values)) {
@@ -51,7 +62,7 @@ class DB
         if (is_int(key($values))) {
             $param_arr = array();
             foreach ($values as $e) {
-                $param_arr[] = $this->pdo->quote($e);
+                $param_arr[] = $this->_pdo->quote($e);
             }
             array_unshift($param_arr, str_replace('?', '%s', $sql));
             $this->lastSql = call_user_func_array('sprintf', $param_arr);
@@ -61,7 +72,7 @@ class DB
                 if ($v !== null && !is_scalar($v)) {
                     throw new \Exception("not scalar", 1);
                 }
-                $print_sql = str_replace(':'.$k, $v === null ? 'NULL' : $this->pdo->quote($v), $print_sql);
+                $print_sql = str_replace(':'.$k, $v === null ? 'NULL' : $this->_pdo->quote($v), $print_sql);
             }
             $this->lastSql = $print_sql;
         }
@@ -70,11 +81,11 @@ class DB
         }
 
         if ($this->autoReconnect) {
-            $this->pdo->setAttribute(Pdo::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
+            $this->_pdo->setAttribute(Pdo::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
         }
         $t = microtime(true);
         for ($i=0; $i < 3; $i++) {
-            $stmt = $this->pdo->prepare($sql);
+            $stmt = $this->_pdo->prepare($sql);
             $r = $stmt->execute($values);
             if ($this->autoReconnect && $r === false) {
                 $errorInfo = $stmt->errorInfo();
@@ -210,8 +221,8 @@ class DB
 
     public function __call($name, $args)
     {
-        if (method_exists($this->pdo, $name)) {
-            return call_user_func_array(array($this->pdo, $name), $args);
+        if (method_exists($this->_pdo, $name)) {
+            return call_user_func_array(array($this->_pdo, $name), $args);
         }
         if (preg_match('/^all_(\w+)_by_(\w+)$/', $name, $matches)) {
             $table = $matches[1];
